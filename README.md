@@ -11,3 +11,9 @@
 8. Therefore, find the longest (and then steepest) path on this map specified in the format above.
 
 ## This was a question given in a job application. I had a difficult time solving it in C++ then. So, I'm trying to solve it in Python now. No purpose really. Like the problem said, it was just a diversion.
+
+Pseudo code:
+- open/read file, find highest/lowest value/values, find neighbors
+- search to get next highest from neighbors in 4 directions(N, E, S, W)
+- do recursion until the lowest value/values is reached
+
