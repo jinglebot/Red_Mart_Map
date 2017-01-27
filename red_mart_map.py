@@ -1,15 +1,7 @@
 """
-    This program gives the path of nodes from neighbors with the highest value
-    with no comparison done.
-    To get the longest path, find all possible paths from peak to bottom.
+    This program gives a path from the highest value to the lowest.
+    There is no comparison with other paths done yet. It still needs more tweaking.
 """
-
-# open file find highest value/values, find max value
-# search to get next node for all 8 directions(NW, N, NE, W, E, SW, S, SE)
-# do recursion
-
-import csv
-
 # CREATE A TUPLE
 def tuple(x, y):
     return x, y
@@ -20,45 +12,52 @@ def get_tuple(tuple_xy):
     x, y = tuple_xy
     return x, y
 
-
 # CREATE A GRID
 def create_graph(G, L, x, y):
-    # grid graph dictionary with nodes in tuples as coordinates and a value for altitude
+    # Create grid graph dictionary with tuples as area coordinates and values as altitude measurements
     # G = {(1,1): 1000, (1,2): 998, ...}
-    # x = width of the grid, range(w), node1
-    # y = height of the grid, range(h), node2
+    # x = width of the grid, range(w)
+    # y = height of the grid, range(h)
 
-    # initialize G
-    for a in x:
-        for b in y:
-            G[tuple(a, b)] = 0
-    t = 0
-    for n in G:
-            G[n] = L[t]
-            t = t + 1
-    #print G
+    # Initialize G
+    for b in range(y):
+        for a in range(x):
+            G[tuple(a, b)] = L.pop(0)
+            #print a, b, G[tuple(a, b)]
+
+    # Print like a grid
+    for b in range(y):
+        for a in range(x):
+            print G[tuple(a, b)],
+        print '\n'
+
     return G
 
-### READ DATA FILE
-##def read_file(filename):
-##    G = []
-##    tsv = csv.reader(open(filename, 'r+'), delimiter = ' ')
-##    for line in tsv:
-##        G = G + line
-##     
-##    for elem in G:
-##        #if elem == None:
-##        print elem
-##        #line = line.strip('\n')
-##        #G = G + line
-##        #for line in G:
-##    print G
-##
-##    return G
+# READ DATA FILE
+def read_file(filename):
+    L = []
+    tsv = open(filename, 'r+').readlines()
 
-#create_graph(G, L, range(3), range(3))
+    # The first line in the file gives the dimensions of the map.
+    first_line = tsv.pop(0)
+    mid = first_line.find(' ', 0)
+    x = int(first_line[0:mid])
+    y = int(first_line[mid+1:])
+    #print first_line, x, y, x*y
 
-# FIND STARTING POINT == NODE WITH HIGHEST VALUE
+    # Save data to a list
+    for line in tsv:
+        line = line.strip('\n')
+        for elem in line:
+            if elem != ' ':
+                L.append(int(elem))
+    #print L
+
+    return L, x, y
+
+# FIND STARTING COORDINATES == HIGHEST VALUE
+# This function returns only one maximum value.
+# If there are duplicate maximum values, this function gets the last one in the loop.
 def find_peak(G):
     maxpt = 0
     for coord in G:
@@ -68,11 +67,11 @@ def find_peak(G):
     #print "max coord", maxcoord, maxpt
     return maxcoord
 
-#print find_peak(G)
-
-# FIND END POINT == NODE WITH LOWEST VALUE
+# FIND END COORDINATES == LOWEST VALUE
+# This function returns only one minimum value.
+# If there are duplicate minimum values, this function gets the last one in the loop.
 def find_bottom(G):
-    minpt = 0
+    minpt = G[0, 0]
     mincoord = 0, 0
     for coord in G:
         if G[coord] < minpt:
@@ -81,30 +80,40 @@ def find_bottom(G):
     #print "min coord", mincoord, minpt
     return mincoord
 
-#print find_peak(G)
-
-# FIND NEIGHBORS OF A NODE
+# FIND AREA NEIGHBORS
 def find_neighbors(G, peak):
+    """
+    # I wasn't sure if I could include NE, NW, SE, SW
     neighbors = {}
-    next_peak = 0
     x, y = get_tuple(peak)
     for p in range(x-1, x+2):
         for q in range(y-1, y+2):
             if tuple(p, q) in G:
                 if tuple(p, q) != peak:
                     neighbors[tuple(p, q)] = G[tuple(p, q)]
+    """
+    neighbors = {}
+    x, y = get_tuple(peak)
+    N = x, y-1
+    S = x, y+1
+    E = x+1, y
+    W = x-1, y
+    directions = [N, E, S, W]
+    for d in directions:
+        if d in G:
+                if d != peak:
+                    neighbors[d] = G[d]
+    
     return neighbors
-
-#print find_neighbors(G, peak)
 
 # FIND NEXT HIGHEST VALUE, NEXT PATH
 # If considering a list of highest values,
 # change vars next_peak and next_peak_val to a dict
 def find_next_peak(N, G, peak):
-    next_peak = 0,0
-    next_peak_val = 0
+    next_peak = None
+    next_peak_val = None
     for n in N[peak]:
-        if N[peak][n] <= G[peak]:
+        if N[peak][n] < G[peak]:
             if N[peak][n] > next_peak_val:
                 next_peak = n
                 next_peak_val = N[peak][n]
@@ -119,39 +128,44 @@ def find_path(N, G, path, bottom, peak):
         return path
     next_peak, val = find_next_peak(N, G, peak)
     print next_peak, val
-    path.append(next_peak)
+    if not next_peak == None:
+        path.append(next_peak)
+    else:
+        return path
     return find_path(N, G, path, bottom, next_peak)
 
 # FIND THE LONGEST PATH
 def find_longest_path():
     G = {}
-    #L = [0, 1, 2, 3, 4, 5, 6, 7, 8]
     N = {}
     filename = 'temp.txt'
-    L = read_file(filename)
-    return L
-    """
-    x = range(3)
-    y = range(3)
+    L, x, y = read_file(filename)
     create_graph(G, L, x, y)
     #Start from the highest peak
     peak = find_peak(G)
+    print "peak", peak, G[peak]
     #End at the lowest part
     bottom = find_bottom(G)
     #Find neighbors
     print "N:"
-    for node in G:
-        N[node] = find_neighbors(G, node)
-        print node, N[node]
+    for area in G:
+        N[area] = find_neighbors(G, area)
+        print area, N[area]
     #Find next peaks
     print "Next peaks:"
-    for node in G:
-        print node, G[node], find_next_peak(N, G, node)
+    for area in G:
+        print area, G[area], find_next_peak(N, G, area)
     #Find path
     print "Path:"
+    P = {}
+    P[peak] = G[peak]
     path = [peak]
     find_path(N, G, path, bottom, peak)
     return path
+    """
+    #print find_neighbors(G, peak)
+    #return G
+    
     """
 
 print find_longest_path()
